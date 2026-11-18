@@ -1,0 +1,22 @@
+# Render Blueprint for the Django API. The database lives on Aiven, not Render.
+# Dashboard: New -> Blueprint -> pick this repo. Render will prompt for the
+# variables marked `sync: false`.
+services:
+  - type: web
+    name: gift-circle-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    # Migrations run on start because the free plan has no pre-deploy step.
+    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /api/health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.2
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
