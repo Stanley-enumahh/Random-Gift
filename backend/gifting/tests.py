@@ -108,6 +108,18 @@ class GroupApiTests(TestCase):
         self.assertNotIn(other['id'], [g['id'] for g in data['groups']])
         self.assertEqual(sum(d['count'] for d in data['joins_by_day']), 3)
         self.assertEqual(data['activity'][0]['kind'], 'drawn')
+        self.assertEqual(row['code'], group['code'])
+
+        member_row = self.client_for(self.users[1]).get('/api/dashboard/').json()['groups'][0]
+        self.assertIsNone(member_row['code'])
+
+    def test_only_admin_gets_invite_code(self):
+        group = self.make_group(2)
+        self.assertEqual(len(group['code']), 6)
+        url = f'/api/groups/{group["id"]}/'
+        self.assertEqual(self.client_for(self.owner).get(url).json()['code'], group['code'])
+        self.assertIsNone(self.client_for(self.users[1]).get(url).json()['code'])
+        self.assertIsNone(self.client_for(self.users[1]).get('/api/groups/').json()[0]['code'])
 
     def test_non_members_cannot_see_group(self):
         group = self.make_group(1)

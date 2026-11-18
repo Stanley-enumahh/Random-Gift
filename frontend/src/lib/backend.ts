@@ -29,7 +29,7 @@ export type User = { id: number; email: string; name: string };
 export type GroupSummary = {
   id: number;
   name: string;
-  code: string;
+  code: string | null; // only sent to the group's admin
   member_count: number;
   is_owner: boolean;
   drawn_at: string | null;
@@ -49,7 +49,7 @@ export type GroupDetail = GroupSummary & {
 export type DashboardGroup = {
   id: number;
   name: string;
-  code: string;
+  code: string | null; // only sent to the group's admin
   is_owner: boolean;
   member_count: number;
   members_preview: Person[];

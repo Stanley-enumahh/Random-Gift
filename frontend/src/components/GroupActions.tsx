@@ -20,7 +20,7 @@ export function AdminPanel({ group }: { group: GroupDetail }) {
   const coolingDown = isDrawn && !group.can_draw && group.next_draw_at !== null;
 
   async function draw() {
-    if (isDrawn && !confirm("Redraw names? Everyone will get a new person to gift.")) return;
+    if (isDrawn && !confirm("Reshuffle names? Everyone will be paired again at random.")) return;
     setError("");
     setPending(true);
     try {
@@ -47,7 +47,7 @@ export function AdminPanel({ group }: { group: GroupDetail }) {
           <p className="mt-1 text-sm text-ink-3">
             {needed > 0
               ? `Share the invite code. You need at least ${group.min_members} people to draw.`
-              : "Drawing closes the group to new members. Everyone, including you, gets one person to gift."}
+              : "Names are shuffled at random, so you won't choose who gets whom. Everyone, including you, gets one person to gift. The group then closes to new members."}
           </p>
           <div className="mt-5 flex items-center gap-3">
             <Progress value={count} max={group.min_members} />
@@ -62,7 +62,7 @@ export function AdminPanel({ group }: { group: GroupDetail }) {
         <>
           <h2 className="mt-1 text-[17px] font-semibold tracking-tight">Names are drawn</h2>
           <p className="mt-1 text-sm text-ink-3">
-            Drawn <LocalTime iso={group.drawn_at!} />. Redrawing gives everyone a new person.
+            Drawn <LocalTime iso={group.drawn_at!} />. A redraw reshuffles everyone at random.
           </p>
           {coolingDown && (
             <div className="mt-5 flex items-center gap-3 rounded-2xl bg-canvas p-4">
@@ -83,7 +83,7 @@ export function AdminPanel({ group }: { group: GroupDetail }) {
       <div className="mt-5 space-y-3">
         <Button variant={isDrawn ? "secondary" : "accent"} onClick={draw} disabled={!group.can_draw || pending} className="w-full">
           <ShuffleIcon width={16} height={16} />
-          {pending ? "Drawing…" : isDrawn ? "Redraw names" : "Assign members"}
+          {pending ? "Shuffling…" : isDrawn ? "Reshuffle at random" : "Start random draw"}
         </Button>
         <ErrorText>{error}</ErrorText>
       </div>

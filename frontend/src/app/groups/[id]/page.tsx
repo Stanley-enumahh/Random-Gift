@@ -43,7 +43,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
             </p>
           </div>
         </div>
-        {!isDrawn && (
+        {!isDrawn && group.code && (
           <div className="flex flex-col items-start gap-1.5 sm:items-end">
             <span className="text-xs font-medium uppercase tracking-wider text-ink-3">Invite code</span>
             <CopyCode code={group.code} />
@@ -81,7 +81,8 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">Waiting for the draw</h2>
                 <p className="mt-1 text-sm text-ink-3">
-                  When {group.is_owner ? "you draw" : `${group.owner.name} draws`} names, you&apos;ll see who you&apos;re gifting right here.
+                  When {group.is_owner ? "you start" : `${group.owner.name} starts`} the draw, everyone is paired at random and
+                  you&apos;ll see who you&apos;re gifting right here. Nobody picks who gets whom.
                 </p>
               </div>
             </Card>
@@ -117,8 +118,8 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
             <CardHeader title="How it works" />
             <ol className="space-y-4 text-sm">
               {[
-                ["Invite", `Share the code. At least ${group.min_members} people need to join.`],
-                ["Draw", "The admin draws names. Everyone gets exactly one person."],
+                ["Invite", `The admin shares the invite code. At least ${group.min_members} people need to join.`],
+                ["Draw", "The admin starts the draw and names are shuffled at random. No one chooses the pairs, not even the admin."],
                 ["Gift", "You only see who you're gifting, never who's gifting you."],
               ].map(([title, body], i) => (
                 <li key={title} className="flex gap-3">

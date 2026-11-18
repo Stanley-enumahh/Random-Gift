@@ -44,7 +44,8 @@ def dashboard(request):
         group_rows.append({
             'id': g.id,
             'name': g.name,
-            'code': g.code,
+            # Only the admin gets the invite code on the dashboard.
+            'code': g.code if g.owner_id == user.id else None,
             'is_owner': g.owner_id == user.id,
             'member_count': g.member_count,
             'members_preview': [_person(m.user) for m in list(g.memberships.all())[:5]],

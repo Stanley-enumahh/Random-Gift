@@ -28,7 +28,7 @@ const VARIANTS: Record<Variant, string> = {
 export function Button({ className = "", variant = "primary", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   return (
     <button
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANTS[variant]} ${className}`}
       {...props}
     />
   );
@@ -50,7 +50,7 @@ export function Input({
           <input
             aria-invalid={error ? true : undefined}
             aria-describedby={errorId}
-            className={`h-11 w-full rounded-xl px-4 text-[15px] text-ink outline-none ring-1 transition placeholder:text-ink-3 focus:bg-white focus:ring-2 ${
+            className={`h-11 w-full rounded-xl px-4 text-base text-ink outline-none ring-1 transition placeholder:text-ink-3 focus:bg-white focus:ring-2 ${
               error
                 ? "bg-brand-50/60 ring-brand-500/50 focus:ring-brand-500/50"
                 : "bg-canvas ring-transparent focus:ring-brand-500/40"

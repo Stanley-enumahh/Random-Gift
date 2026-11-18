@@ -9,7 +9,8 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     # Migrations run on start because the free plan has no pre-deploy step.
-    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    # wait_for_db retries for 90s and prints a plain-English reason if the DB never answers.
+    startCommand: python manage.py wait_for_db && python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
     healthCheckPath: /api/health/
     envVars:
       - key: PYTHON_VERSION

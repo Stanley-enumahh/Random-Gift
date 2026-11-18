@@ -15,14 +15,19 @@ class PersonSerializer(serializers.Serializer):
 class GroupListSerializer(serializers.ModelSerializer):
     member_count = serializers.IntegerField(source='memberships.count', read_only=True)
     is_owner = serializers.SerializerMethodField()
+    code = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'code', 'member_count', 'is_owner', 'drawn_at']
-        read_only_fields = ['code', 'drawn_at']
+        read_only_fields = ['drawn_at']
 
     def get_is_owner(self, group):
         return group.owner_id == self.context['request'].user.id
+
+    def get_code(self, group):
+        # Only the admin can invite people, so only the admin gets the code.
+        return group.code if self.get_is_owner(group) else None
 
 
 class GroupDetailSerializer(GroupListSerializer):

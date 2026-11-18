@@ -18,6 +18,7 @@ type FormSpec = {
   placeholder: string;
   action: string;
   url: string;
+  triggerClassName?: string;
 };
 
 function GroupDialog(spec: FormSpec) {
@@ -44,7 +45,7 @@ function GroupDialog(spec: FormSpec) {
 
   return (
     <>
-      <Button variant={spec.triggerVariant} onClick={() => dialog.current?.showModal()}>
+      <Button variant={spec.triggerVariant} className={spec.triggerClassName} onClick={() => dialog.current?.showModal()}>
         {spec.trigger}
       </Button>
       <dialog
@@ -82,9 +83,10 @@ function GroupDialog(spec: FormSpec) {
   );
 }
 
-export function CreateGroupDialog() {
+export function CreateGroupDialog({ className }: { className?: string }) {
   return (
     <GroupDialog
+      triggerClassName={className}
       trigger={<><PlusIcon width={16} height={16} /> New group</>}
       triggerVariant="primary"
       icon={<PlusIcon width={22} height={22} />}
@@ -99,9 +101,10 @@ export function CreateGroupDialog() {
   );
 }
 
-export function JoinGroupDialog() {
+export function JoinGroupDialog({ className }: { className?: string }) {
   return (
     <GroupDialog
+      triggerClassName={className}
       trigger={<><TicketIcon width={16} height={16} /> Join with code</>}
       triggerVariant="secondary"
       icon={<TicketIcon width={22} height={22} />}

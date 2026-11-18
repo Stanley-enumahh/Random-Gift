@@ -28,9 +28,10 @@ export default async function DashboardPage() {
             <Greeting name={user.name} />
           </h1>
         </div>
-        <div className="flex gap-2">
-          <JoinGroupDialog />
-          <CreateGroupDialog />
+        {/* Two equal columns on phones so neither label wraps; natural width from sm up. */}
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <JoinGroupDialog className="w-full max-sm:px-3! sm:w-auto" />
+          <CreateGroupDialog className="w-full max-sm:px-3! sm:w-auto" />
         </div>
       </div>
 
@@ -143,8 +144,10 @@ function GroupRow({ group: g, minMembers }: { group: DashboardGroup; minMembers:
             <Badge tone="green">Drawn</Badge>
           ) : ready ? (
             <Badge tone="brand">Ready to draw</Badge>
-          ) : (
+          ) : g.code ? (
             <span className="rounded-lg bg-canvas px-2 py-1 font-mono text-xs tracking-wider text-ink-2">{g.code}</span>
+          ) : (
+            <Badge tone="amber">Open</Badge>
           )}
         </div>
         <ChevronRightIcon className="shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" />
@@ -165,7 +168,7 @@ function SecretCard({ groups }: { groups: DashboardGroup[] }) {
 
         {groups.length === 0 ? (
           <p className="mt-5 text-sm leading-relaxed text-white/60">
-            Once an admin draws names, the person you&apos;re gifting will show up here.
+            Once the admin starts the random draw, the person you&apos;re gifting will show up here.
           </p>
         ) : (
           <ul className="mt-5 space-y-3">
@@ -227,11 +230,12 @@ function EmptyState() {
         </div>
         <h2 className="relative mt-6 text-2xl font-semibold tracking-tight">Start your first gift circle</h2>
         <p className="relative mx-auto mt-2 max-w-md text-ink-3">
-          Create a group and share the code, or join one a friend started. Once {`there's`} at least four of you, the admin draws names.
+          Create a group and share the code, or join one a friend started. Once {`there's`} at least four of you, the admin starts a random draw.
         </p>
-        <div className="relative mt-8 flex justify-center gap-2">
-          <JoinGroupDialog />
-          <CreateGroupDialog />
+        {/* Stacked full-width buttons on phones, side by side from sm up. */}
+        <div className="relative mx-auto mt-8 flex max-w-xs flex-col-reverse gap-2 sm:max-w-none sm:flex-row sm:justify-center">
+          <JoinGroupDialog className="h-11! w-full sm:w-auto" />
+          <CreateGroupDialog className="h-11! w-full sm:w-auto" />
         </div>
       </div>
     </Card>
