@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -12,6 +14,40 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'name']
+
+
+class MeSerializer(serializers.Serializer):
+    """The signed-in user's own account, including private profile fields."""
+
+    id = serializers.IntegerField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    name = serializers.CharField(source='first_name', max_length=150)
+    phone = serializers.CharField(source='profile.phone', max_length=20, allow_blank=True, required=False)
+    show_phone_prompt = serializers.BooleanField(source='profile.should_prompt_for_phone', read_only=True)
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Name cannot be empty.')
+        return value
+
+    def validate_phone(self, value):
+        if not value.strip():
+            return ''
+        # Accept spaces, dashes, dots and brackets as people type them; store +digits.
+        cleaned = re.sub(r'[\s\-().]', '', value.strip())
+        if not re.fullmatch(r'\+?\d{7,15}', cleaned):
+            raise serializers.ValidationError('Enter a valid phone number, e.g. +234 801 234 5678.')
+        return cleaned
+
+    def update(self, user, validated_data):
+        if 'first_name' in validated_data:
+            user.first_name = validated_data['first_name']
+            user.save(update_fields=['first_name'])
+        if 'phone' in validated_data.get('profile', {}):
+            user.profile.phone = validated_data['profile']['phone']
+            user.profile.save(update_fields=['phone'])
+        return user
 
 
 class SignupSerializer(serializers.Serializer):

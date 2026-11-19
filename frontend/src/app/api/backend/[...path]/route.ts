@@ -13,7 +13,7 @@ async function forward(request: Request, { params }: Ctx) {
   if (!token) return NextResponse.json({ detail: "Not signed in." }, { status: 401 });
 
   const { path } = await params;
-  const body = request.method === "GET" ? undefined : await request.text();
+  const body = request.method === "GET" || request.method === "DELETE" ? undefined : await request.text();
   let res: Response;
   try {
     res = await djangoFetch(`/api/${path.join("/")}/`, { method: request.method, body: body || undefined }, token);
@@ -25,4 +25,4 @@ async function forward(request: Request, { params }: Ctx) {
   return NextResponse.json(await readJson(res), { status: res.status });
 }
 
-export { forward as GET, forward as POST };
+export { forward as GET, forward as POST, forward as PATCH, forward as DELETE };

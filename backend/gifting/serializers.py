@@ -12,6 +12,15 @@ class PersonSerializer(serializers.Serializer):
     name = serializers.CharField(source='first_name')
 
 
+class MemberSerializer(PersonSerializer):
+    # Fellow group members can see each other's phone numbers (never emails).
+    phone = serializers.SerializerMethodField()
+
+    def get_phone(self, user):
+        profile = getattr(user, 'profile', None)
+        return profile.phone if profile else ''
+
+
 class GroupListSerializer(serializers.ModelSerializer):
     member_count = serializers.IntegerField(source='memberships.count', read_only=True)
     is_owner = serializers.SerializerMethodField()
@@ -44,7 +53,8 @@ class GroupDetailSerializer(GroupListSerializer):
         ]
 
     def get_members(self, group):
-        return PersonSerializer([m.user for m in group.memberships.select_related('user')], many=True).data
+        members = group.memberships.select_related('user__profile')
+        return MemberSerializer([m.user for m in members], many=True).data
 
     def get_my_receiver(self, group):
         # Only ever expose the requester's own receiver -- never who gifts them.

@@ -5,6 +5,7 @@ import { Greeting, RelativeTime, RevealName, TodayLabel } from "@/components/cli
 import { CreateGroupDialog, JoinGroupDialog } from "@/components/GroupForms";
 import { ChevronRightIcon, CrownIcon, GiftIcon, GridIcon, LockIcon, ShuffleIcon, SparklesIcon, UsersIcon } from "@/components/icons";
 import JoinsChart from "@/components/JoinsChart";
+import PhonePrompt from "@/components/PhonePrompt";
 import { Avatar, AvatarStack, Badge, Card, CardHeader, Progress } from "@/components/ui";
 import { getAsUser, type Activity, type Dashboard, type DashboardGroup, type User } from "@/lib/backend";
 
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell user={user} groups={groups.map((g) => ({ id: g.id, name: g.name, drawn: !!g.drawn_at }))}>
+      {user.show_phone_prompt && <PhonePrompt />}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-ink-3">

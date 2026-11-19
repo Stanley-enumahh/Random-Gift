@@ -42,6 +42,17 @@ class Membership(models.Model):
         ordering = ['joined_at']
 
 
+class RemovedMember(models.Model):
+    """Someone the admin removed; they can't rejoin with the invite code."""
+
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='removed_members')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
+    removed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['group', 'user'], name='unique_removed_member')]
+
+
 class Assignment(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='assignments')
     giver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')

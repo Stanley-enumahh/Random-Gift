@@ -2,11 +2,57 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { postJson } from "@/lib/api";
-import type { GroupDetail } from "@/lib/backend";
+import { postJson, sendJson } from "@/lib/api";
+import type { GroupDetail, Person } from "@/lib/backend";
 import { Countdown, LocalTime } from "./client-bits";
-import { ClockIcon, CrownIcon, ShuffleIcon } from "./icons";
+import ConfirmDialog from "./ConfirmDialog";
+import { ClockIcon, CrownIcon, ShuffleIcon, UserMinusIcon } from "./icons";
 import { Button, ErrorText, Progress } from "./ui";
+
+export function RemoveMemberButton({ groupId, member, isDrawn }: { groupId: number; member: Person; isDrawn: boolean }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  async function remove() {
+    setError("");
+    try {
+      await sendJson("DELETE", `/api/backend/groups/${groupId}/members/${member.id}`);
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-lg p-1.5 text-ink-3 transition hover:bg-brand-50 hover:text-brand-600"
+        title={`Remove ${member.name}`}
+        aria-label={`Remove ${member.name} from the group`}
+      >
+        <UserMinusIcon width={17} height={17} />
+      </button>
+      <ConfirmDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        onConfirm={remove}
+        icon={<UserMinusIcon width={22} height={22} />}
+        title={`Remove ${member.name}?`}
+        body={
+          error ||
+          (isDrawn
+            ? "Names have already been drawn, so this cancels the current draw. You'll need to start a new random draw. They won't be able to rejoin with the code."
+            : "They'll leave the group and won't be able to rejoin with the invite code.")
+        }
+        confirmLabel="Remove"
+        pendingLabel="Removing…"
+      />
+    </>
+  );
+}
 
 export function AdminPanel({ group }: { group: GroupDetail }) {
   const router = useRouter();

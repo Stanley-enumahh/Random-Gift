@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from . import draw as draw_service
-from .models import Group, Membership
+from .models import Group, Membership, RemovedMember
 from .serializers import GroupDetailSerializer, GroupListSerializer, JoinSerializer
 
 
@@ -41,6 +41,8 @@ def join(request):
         return Response({'detail': 'No group found with that code.'}, status=status.HTTP_404_NOT_FOUND)
     if group.memberships.filter(user=request.user).exists():
         return _detail(request, group)
+    if group.removed_members.filter(user=request.user).exists():
+        return Response({'detail': 'The admin removed you from this group.'}, status=status.HTTP_403_FORBIDDEN)
     if group.is_drawn:
         return Response({'detail': 'This group has already drawn names.'}, status=status.HTTP_400_BAD_REQUEST)
     try:
@@ -53,6 +55,29 @@ def join(request):
 @api_view(['GET'])
 def group_detail(request, group_id):
     return _detail(request, _my_group(request, group_id))
+
+
+@api_view(['DELETE'])
+def remove_member(request, group_id, user_id):
+    group = _my_group(request, group_id)
+    if group.owner_id != request.user.id:
+        return Response({'detail': 'Only the group admin can remove members.'}, status=status.HTTP_403_FORBIDDEN)
+    if user_id == request.user.id:
+        return Response({'detail': "You can't remove yourself as the admin."}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        group = Group.objects.select_for_update().get(pk=group.pk)
+        deleted, _ = group.memberships.filter(user_id=user_id).delete()
+        if not deleted:
+            return Response({'detail': 'That person is not in this group.'}, status=status.HTTP_404_NOT_FOUND)
+        RemovedMember.objects.get_or_create(group=group, user_id=user_id)
+        if group.is_drawn:
+            # The removed person was someone's giver and someone's receiver, so the
+            # loop is broken. Clear the draw; the group reopens for a fresh one.
+            group.assignments.all().delete()
+            group.drawn_at = None
+            group.save(update_fields=['drawn_at'])
+    return _detail(request, group)
 
 
 @api_view(['POST'])

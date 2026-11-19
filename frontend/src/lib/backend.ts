@@ -24,7 +24,8 @@ export async function readJson(res: Response): Promise<Record<string, unknown>> 
   return res.json().catch(() => ({ detail: "Something went wrong on the server." }));
 }
 
-export type User = { id: number; email: string; name: string };
+// The signed-in user's own account (from /api/auth/me/).
+export type User = { id: number; email: string; name: string; phone: string; show_phone_prompt: boolean };
 
 export type GroupSummary = {
   id: number;
@@ -37,9 +38,12 @@ export type GroupSummary = {
 
 export type Person = { id: number; name: string };
 
+// Group members see each other's phone numbers ("" if not set).
+export type Member = Person & { phone: string };
+
 export type GroupDetail = GroupSummary & {
   owner: Person;
-  members: Person[];
+  members: Member[];
   my_receiver: Person | null;
   min_members: number;
   next_draw_at: string | null;

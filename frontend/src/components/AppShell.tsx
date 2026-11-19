@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { postJson } from "@/lib/api";
 import type { User } from "@/lib/backend";
 import ConfirmDialog from "./ConfirmDialog";
-import { GiftIcon, GridIcon, LogoutIcon } from "./icons";
+import { GiftIcon, GridIcon, LogoutIcon, SettingsIcon } from "./icons";
 import { Avatar } from "./ui";
 
 type NavGroup = { id: number; name: string; drawn: boolean };
@@ -61,6 +61,9 @@ export default function AppShell({ user, groups, children }: { user: User; group
           <NavItem href="/" active={pathname === "/"}>
             <GridIcon className="text-ink-3" /> Overview
           </NavItem>
+          <NavItem href="/settings" active={pathname === "/settings"}>
+            <SettingsIcon className="text-ink-3" /> Settings
+          </NavItem>
         </nav>
 
         <p className="mt-8 px-3 text-[11px] font-semibold uppercase tracking-wider text-ink-3">Your groups</p>
@@ -88,9 +91,18 @@ export default function AppShell({ user, groups, children }: { user: User; group
 
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-white/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <Logo />
-        <button onClick={askLogout} className="rounded-lg p-2 text-ink-2 hover:bg-canvas" title="Log out">
-          <LogoutIcon />
-        </button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/settings"
+            className={`rounded-lg p-2 hover:bg-canvas ${pathname === "/settings" ? "bg-canvas text-ink" : "text-ink-2"}`}
+            title="Settings"
+          >
+            <SettingsIcon />
+          </Link>
+          <button onClick={askLogout} className="rounded-lg p-2 text-ink-2 hover:bg-canvas" title="Log out">
+            <LogoutIcon />
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 lg:py-10">{children}</main>

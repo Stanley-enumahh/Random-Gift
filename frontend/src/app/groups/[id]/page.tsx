@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { CopyCode, RevealName } from "@/components/client-bits";
-import { AdminPanel } from "@/components/GroupActions";
-import { ArrowLeftIcon, ClockIcon, CrownIcon, GiftIcon, LockIcon } from "@/components/icons";
+import { AdminPanel, RemoveMemberButton } from "@/components/GroupActions";
+import { ArrowLeftIcon, ClockIcon, CrownIcon, GiftIcon, LockIcon, PhoneIcon } from "@/components/icons";
 import { Avatar, Badge, Card, CardHeader } from "@/components/ui";
 import { getAsUser, type GroupDetail, type GroupSummary, type User } from "@/lib/backend";
 
@@ -99,12 +99,20 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                       {m.name}
                       {m.id === user.id && <span className="font-normal text-ink-3"> (you)</span>}
                     </p>
-                    <p className="text-xs text-ink-3">{m.id === group.owner.id ? "Admin" : "Member"}</p>
+                    {m.phone ? (
+                      <a href={`tel:${m.phone}`} className="inline-flex items-center gap-1 text-xs text-ink-2 hover:text-brand-600">
+                        <PhoneIcon width={12} height={12} /> {m.phone}
+                      </a>
+                    ) : (
+                      <p className="text-xs text-ink-3">{m.id === group.owner.id ? "Admin" : "Member"} · no phone yet</p>
+                    )}
                   </div>
-                  {m.id === group.owner.id && (
+                  {m.id === group.owner.id ? (
                     <span title="Admin">
                       <CrownIcon width={16} height={16} className="text-amber-500" />
                     </span>
+                  ) : (
+                    group.is_owner && <RemoveMemberButton groupId={group.id} member={m} isDrawn={isDrawn} />
                   )}
                 </li>
               ))}

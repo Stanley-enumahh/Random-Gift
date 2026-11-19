@@ -6,6 +6,8 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from accounts.models import Profile
+
 from .draw import make_pairs
 from .models import Assignment, Group, Membership
 
@@ -120,6 +122,42 @@ class GroupApiTests(TestCase):
         self.assertEqual(self.client_for(self.owner).get(url).json()['code'], group['code'])
         self.assertIsNone(self.client_for(self.users[1]).get(url).json()['code'])
         self.assertIsNone(self.client_for(self.users[1]).get('/api/groups/').json()[0]['code'])
+
+    def test_admin_removes_member_who_cannot_rejoin(self):
+        group = self.make_group(3)
+        url = f'/api/groups/{group["id"]}/members/{self.users[1].id}/'
+
+        self.assertEqual(self.client_for(self.users[2]).delete(url).status_code, 403)
+        res = self.client_for(self.owner).delete(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertNotIn(self.users[1].id, [m['id'] for m in res.json()['members']])
+
+        rejoin = self.client_for(self.users[1]).post('/api/groups/join/', {'code': group['code']})
+        self.assertEqual(rejoin.status_code, 403)
+        self.assertEqual(self.client_for(self.users[1]).get(f'/api/groups/{group["id"]}/').status_code, 404)
+
+    def test_members_see_each_others_phone_numbers(self):
+        group = self.make_group(2)
+        Profile.objects.create(user=self.owner, phone='+2348012345678')
+        data = self.client_for(self.users[1]).get(f'/api/groups/{group["id"]}/').json()
+        phones = {m['id']: m['phone'] for m in data['members']}
+        self.assertEqual(phones, {self.owner.id: '+2348012345678', self.users[1].id: ''})
+        self.assertNotIn('email', data['members'][0])
+
+    def test_admin_cannot_remove_self(self):
+        group = self.make_group(2)
+        res = self.client_for(self.owner).delete(f'/api/groups/{group["id"]}/members/{self.owner.id}/')
+        self.assertEqual(res.status_code, 400)
+
+    def test_removing_after_draw_clears_the_draw(self):
+        group = self.make_group(5)
+        owner = self.client_for(self.owner)
+        owner.post(f'/api/groups/{group["id"]}/draw/')
+        res = owner.delete(f'/api/groups/{group["id"]}/members/{self.users[4].id}/')
+        self.assertIsNone(res.json()['drawn_at'])
+        self.assertFalse(Assignment.objects.filter(group_id=group['id']).exists())
+        # Four left, so a fresh draw works straight away.
+        self.assertEqual(owner.post(f'/api/groups/{group["id"]}/draw/').status_code, 200)
 
     def test_non_members_cannot_see_group(self):
         group = self.make_group(1)
