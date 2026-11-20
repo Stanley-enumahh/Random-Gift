@@ -45,6 +45,11 @@ def join(request):
         return Response({'detail': 'The admin removed you from this group.'}, status=status.HTTP_403_FORBIDDEN)
     if group.is_drawn:
         return Response({'detail': 'This group has already drawn names.'}, status=status.HTTP_400_BAD_REQUEST)
+    if group.is_code_expired:
+        return Response(
+            {'detail': 'This invite code has expired. The joining deadline has passed.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     try:
         Membership.objects.create(group=group, user=request.user)
     except IntegrityError:
@@ -52,9 +57,21 @@ def join(request):
     return _detail(request, group, status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 def group_detail(request, group_id):
-    return _detail(request, _my_group(request, group_id))
+    group = _my_group(request, group_id)
+    if request.method == 'GET':
+        return _detail(request, group)
+
+    # PATCH: the admin can move the joining deadline (e.g. it passed before enough people joined).
+    if group.owner_id != request.user.id:
+        return Response({'detail': 'Only the group admin can change the deadline.'}, status=status.HTTP_403_FORBIDDEN)
+    if group.is_drawn:
+        return Response({'detail': 'Names are already drawn, so joining is closed.'}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = GroupListSerializer(group, data=request.data, partial=True, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return _detail(request, group)
 
 
 @api_view(['DELETE'])

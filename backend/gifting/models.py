@@ -2,6 +2,7 @@ import secrets
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 # No 0/O/1/I/L so codes are easy to read out loud and type.
 CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -22,6 +23,9 @@ class Group(models.Model):
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Membership', related_name='gift_groups')
     # Null until the first draw; joining is closed once it's set.
     drawn_at = models.DateTimeField(null=True, blank=True)
+    # The invite code stops working after this. Set when the group is created;
+    # null only for groups made before deadlines existed (no limit).
+    join_deadline = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -30,6 +34,10 @@ class Group(models.Model):
     @property
     def is_drawn(self):
         return self.drawn_at is not None
+
+    @property
+    def is_code_expired(self):
+        return self.join_deadline is not None and timezone.now() >= self.join_deadline
 
 
 class Membership(models.Model):

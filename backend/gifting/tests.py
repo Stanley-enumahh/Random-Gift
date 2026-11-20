@@ -43,11 +43,42 @@ class GroupApiTests(TestCase):
         client.force_authenticate(user)
         return client
 
-    def make_group(self, member_count):
-        group = self.client_for(self.owner).post('/api/groups/', {'name': 'Office'}).json()
+    def make_group(self, member_count, deadline=None):
+        deadline = deadline or timezone.now() + timedelta(days=3)
+        group = self.client_for(self.owner).post('/api/groups/', {'name': 'Office', 'join_deadline': deadline.isoformat()}).json()
         for user in self.users[1:member_count]:
             self.client_for(user).post('/api/groups/join/', {'code': group['code']})
         return group
+
+    def test_create_requires_future_deadline(self):
+        owner = self.client_for(self.owner)
+        self.assertIn('join_deadline', owner.post('/api/groups/', {'name': 'X'}).json())
+        past = (timezone.now() - timedelta(hours=1)).isoformat()
+        self.assertIn('join_deadline', owner.post('/api/groups/', {'name': 'X', 'join_deadline': past}).json())
+        too_far = (timezone.now() + timedelta(days=400)).isoformat()
+        self.assertIn('join_deadline', owner.post('/api/groups/', {'name': 'X', 'join_deadline': too_far}).json())
+
+    def test_code_stops_working_after_deadline(self):
+        group = self.make_group(2)
+        self.assertFalse(group['code_expired'])
+        later = timezone.now() + timedelta(days=3, minutes=1)
+        with mock.patch('django.utils.timezone.now', return_value=later):
+            res = self.client_for(self.users[2]).post('/api/groups/join/', {'code': group['code']})
+            self.assertEqual(res.status_code, 400)
+            self.assertIn('expired', res.json()['detail'])
+            self.assertTrue(self.client_for(self.owner).get(f'/api/groups/{group["id"]}/').json()['code_expired'])
+            # Existing members are unaffected.
+            self.assertEqual(self.client_for(self.users[1]).get(f'/api/groups/{group["id"]}/').status_code, 200)
+
+            # The admin can extend it, which makes the code work again; members can't.
+            url = f'/api/groups/{group["id"]}/'
+            new_deadline = (later + timedelta(days=2)).isoformat()
+            self.assertEqual(self.client_for(self.users[1]).patch(url, {'join_deadline': new_deadline}).status_code, 403)
+            res = self.client_for(self.owner).patch(url, {'join_deadline': new_deadline})
+            self.assertEqual(res.status_code, 200)
+            self.assertFalse(res.json()['code_expired'])
+            res = self.client_for(self.users[2]).post('/api/groups/join/', {'code': group['code']})
+            self.assertEqual(res.status_code, 201)
 
     def test_join_by_code_is_case_and_dash_insensitive(self):
         group = self.make_group(1)
@@ -97,7 +128,8 @@ class GroupApiTests(TestCase):
     def test_dashboard_stats_and_privacy(self):
         group = self.make_group(4)
         self.client_for(self.owner).post(f'/api/groups/{group["id"]}/draw/')
-        other = self.client_for(self.users[4]).post('/api/groups/', {'name': 'Not mine'}).json()
+        deadline = (timezone.now() + timedelta(days=3)).isoformat()
+        other = self.client_for(self.users[4]).post('/api/groups/', {'name': 'Not mine', 'join_deadline': deadline}).json()
 
         data = self.client_for(self.owner).get('/api/dashboard/').json()
         self.assertEqual(data['stats'], {

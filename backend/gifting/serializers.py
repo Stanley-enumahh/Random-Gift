@@ -1,9 +1,13 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
 from .draw import next_draw_allowed_at
 from .models import Assignment, Group
+
+MAX_JOIN_WINDOW_DAYS = 365
 
 
 class PersonSerializer(serializers.Serializer):
@@ -25,11 +29,22 @@ class GroupListSerializer(serializers.ModelSerializer):
     member_count = serializers.IntegerField(source='memberships.count', read_only=True)
     is_owner = serializers.SerializerMethodField()
     code = serializers.SerializerMethodField()
+    # Required when creating a group; older groups may still have none.
+    join_deadline = serializers.DateTimeField()
+    code_expired = serializers.BooleanField(source='is_code_expired', read_only=True)
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'code', 'member_count', 'is_owner', 'drawn_at']
+        fields = ['id', 'name', 'code', 'member_count', 'is_owner', 'drawn_at', 'join_deadline', 'code_expired']
         read_only_fields = ['drawn_at']
+
+    def validate_join_deadline(self, value):
+        now = timezone.now()
+        if value <= now + timedelta(minutes=5):
+            raise serializers.ValidationError('Pick a joining deadline in the future.')
+        if value > now + timedelta(days=MAX_JOIN_WINDOW_DAYS):
+            raise serializers.ValidationError(f'The deadline must be within {MAX_JOIN_WINDOW_DAYS} days.')
+        return value
 
     def get_is_owner(self, group):
         return group.owner_id == self.context['request'].user.id

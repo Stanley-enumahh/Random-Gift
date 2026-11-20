@@ -146,6 +146,8 @@ function GroupRow({ group: g, minMembers }: { group: DashboardGroup; minMembers:
             <Badge tone="green">Drawn</Badge>
           ) : ready ? (
             <Badge tone="brand">Ready to draw</Badge>
+          ) : g.code_expired ? (
+            <Badge tone="gray">Joining closed</Badge>
           ) : g.code ? (
             <span className="rounded-lg bg-canvas px-2 py-1 font-mono text-xs tracking-wider text-ink-2">{g.code}</span>
           ) : (

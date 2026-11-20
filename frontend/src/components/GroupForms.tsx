@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { postJson } from "@/lib/api";
 import type { GroupDetail } from "@/lib/backend";
-import { PlusIcon, TicketIcon } from "./icons";
+import { defaultDeadline, localInputToIso, minDeadline } from "@/lib/datetime";
+import { ClockIcon, PlusIcon, TicketIcon } from "./icons";
 import { Button, ErrorText, Input } from "./ui";
 
 type FormSpec = {
@@ -19,6 +20,7 @@ type FormSpec = {
   action: string;
   url: string;
   triggerClassName?: string;
+  withDeadline?: boolean;
 };
 
 function GroupDialog(spec: FormSpec) {
@@ -26,13 +28,25 @@ function GroupDialog(spec: FormSpec) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  // Filled in when the dialog opens, so it's based on the viewer's clock.
+  const [deadline, setDeadline] = useState({ value: "", min: "" });
+
+  function open() {
+    if (spec.withDeadline) setDeadline({ value: defaultDeadline(), min: minDeadline() });
+    dialog.current?.showModal();
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setPending(true);
+    const body: Record<string, unknown> = Object.fromEntries(new FormData(e.currentTarget));
+    if (spec.withDeadline) {
+      delete body.join_deadline_local;
+      body.join_deadline = localInputToIso(deadline.value);
+    }
     try {
-      const group = await postJson<GroupDetail>(spec.url, Object.fromEntries(new FormData(e.currentTarget)));
+      const group = await postJson<GroupDetail>(spec.url, body);
       dialog.current?.close();
       router.push(`/groups/${group.id}`);
       router.refresh();
@@ -45,7 +59,7 @@ function GroupDialog(spec: FormSpec) {
 
   return (
     <>
-      <Button variant={spec.triggerVariant} className={spec.triggerClassName} onClick={() => dialog.current?.showModal()}>
+      <Button variant={spec.triggerVariant} className={spec.triggerClassName} onClick={open}>
         {spec.trigger}
       </Button>
       <dialog
@@ -68,6 +82,22 @@ function GroupDialog(spec: FormSpec) {
             maxLength={spec.field === "code" ? 20 : 100}
             className={spec.field === "code" ? "font-mono uppercase tracking-[0.25em]" : ""}
           />
+          {spec.withDeadline && (
+            <div>
+              <Input
+                label="Joining deadline"
+                name="join_deadline_local"
+                type="datetime-local"
+                required
+                value={deadline.value}
+                min={deadline.min}
+                onChange={(e) => setDeadline((d) => ({ ...d, value: e.target.value }))}
+              />
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-3">
+                <ClockIcon width={12} height={12} className="shrink-0" /> The invite code stops working after this. You can change it later.
+              </p>
+            </div>
+          )}
           <ErrorText>{error}</ErrorText>
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="ghost" onClick={() => dialog.current?.close()}>
@@ -97,6 +127,7 @@ export function CreateGroupDialog({ className }: { className?: string }) {
       placeholder="e.g. Office Secret Santa"
       action="Create group"
       url="/api/backend/groups"
+      withDeadline
     />
   );
 }

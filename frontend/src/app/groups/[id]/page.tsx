@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
-import { CopyCode, RevealName } from "@/components/client-bits";
+import { CopyCode, RelativeTime, RevealName } from "@/components/client-bits";
 import { AdminPanel, RemoveMemberButton } from "@/components/GroupActions";
 import { ArrowLeftIcon, ClockIcon, CrownIcon, GiftIcon, LockIcon, PhoneIcon } from "@/components/icons";
 import { Avatar, Badge, Card, CardHeader } from "@/components/ui";
@@ -36,17 +36,34 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-semibold tracking-tight">{group.name}</h1>
-              {isDrawn ? <Badge tone="green">Drawn</Badge> : <Badge tone="amber">Open</Badge>}
+              {isDrawn ? (
+                <Badge tone="green">Drawn</Badge>
+              ) : group.code_expired ? (
+                <Badge tone="gray">Joining closed</Badge>
+              ) : (
+                <Badge tone="amber">Open</Badge>
+              )}
             </div>
             <p className="mt-1 text-sm text-ink-3">
               {group.members.length} member{group.members.length === 1 ? "" : "s"} · Admin: {group.owner.id === user.id ? "you" : group.owner.name}
             </p>
+            {!isDrawn && group.join_deadline && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-3">
+                <ClockIcon width={14} height={14} />
+                {group.code_expired ? "Joining closed " : "Joining closes "}
+                <RelativeTime iso={group.join_deadline} />
+              </p>
+            )}
           </div>
         </div>
         {!isDrawn && group.code && (
           <div className="flex flex-col items-start gap-1.5 sm:items-end">
-            <span className="text-xs font-medium uppercase tracking-wider text-ink-3">Invite code</span>
-            <CopyCode code={group.code} />
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-3">
+              Invite code{group.code_expired && " · expired"}
+            </span>
+            <div className={group.code_expired ? "pointer-events-none opacity-40 line-through" : ""}>
+              <CopyCode code={group.code} />
+            </div>
           </div>
         )}
       </div>

@@ -50,6 +50,8 @@ def dashboard(request):
             'member_count': g.member_count,
             'members_preview': [_person(m.user) for m in list(g.memberships.all())[:5]],
             'drawn_at': g.drawn_at,
+            'join_deadline': g.join_deadline,
+            'code_expired': g.is_code_expired,
             'next_draw_at': allowed_at,
             'my_receiver': _person(receiver) if receiver else None,
         })

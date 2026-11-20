@@ -34,6 +34,8 @@ export type GroupSummary = {
   member_count: number;
   is_owner: boolean;
   drawn_at: string | null;
+  join_deadline: string | null; // null only for groups made before deadlines existed
+  code_expired: boolean;
 };
 
 export type Person = { id: number; name: string };
@@ -58,6 +60,8 @@ export type DashboardGroup = {
   member_count: number;
   members_preview: Person[];
   drawn_at: string | null;
+  join_deadline: string | null;
+  code_expired: boolean;
   next_draw_at: string | null;
   my_receiver: Person | null;
 };
